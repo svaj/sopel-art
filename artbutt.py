@@ -1,6 +1,7 @@
 # coding=utf8
 
-import MySQLdb # TODO: Make this Sql alchemy!
+from models import Art
+from sqlalchemy.ext.declarative import declarative_base
 import sopel.module
 from sopel.config.types import StaticSection, ValidatedAttribute
 from flask import Flask, abort
@@ -8,6 +9,8 @@ import threading  # This is so we can start flask in a thread. :D
 
 app = Flask(__name__)
 local_bot = None
+
+Base = declarative_base()  # SA Base
 
 
 class ArtSection(StaticSection):
@@ -54,16 +57,7 @@ def configure(config):
                          db=config.art.db_name)
     cur = db.cursor()
     # Create art table
-    cur.execute("CREATE TABLE IF NOT EXISTS `art` ( \
-                `id` int(11) NOT NULL auto_increment, \
-                `date` datetime NOT NULL, \
-                `creator` text NOT NULL, \
-                `art` text NOT NULL, \
-                `kinskode` text NOT NULL, \
-                `irccode` text NOT NULL, \
-                `display_count` int NOT NULL DEFAULT 0, \
-                PRIMARY KEY  (`id`) \
-                ) ENGINE=MyISAM  DEFAULT CHARSET=utf8mb4")
+    Base.metadata.create_all(engine)
     # Insert an art :D
     db.commit()
     db.close()
