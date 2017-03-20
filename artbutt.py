@@ -2,6 +2,7 @@
 
 
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine
 from sqlalchemy import Column, DateTime, Integer, String, Text
 import sopel.module
 from sopel.config.types import StaticSection, ValidatedAttribute
@@ -12,8 +13,7 @@ app = Flask(__name__)
 local_bot = None
 
 Base = declarative_base()  # SA Base
-
-
+engine = {}
 
 
 class Art(Base):
@@ -29,21 +29,19 @@ class Art(Base):
 
 
 
-
-
 class ArtSection(StaticSection):
     """ Setup what our config keys look like. """
-    db_host = ValidatedAttribute('db_host', default="localhost")
+    db_engine = ValidatedAttribute('db_engine', default="sqlite:///sopel_art.db")
     """The MySQL host for storing art."""
-
-    db_user = ValidatedAttribute('db_user', default="sopel_art")
-    """The MySQL user for storing art."""
-
-    db_pass = ValidatedAttribute('db_pass')
-    """The MySQL pass for storing art."""
-
-    db_name = ValidatedAttribute('db_name', default="sopel_art")
-    """The MySQL database name for storing art."""
+    #
+    # db_user = ValidatedAttribute('db_user', default="sopel_art")
+    # """The MySQL user for storing art."""
+    #
+    # db_pass = ValidatedAttribute('db_pass')
+    # """The MySQL pass for storing art."""
+    #
+    # db_name = ValidatedAttribute('db_name', default="sopel_art")
+    # """The MySQL database name for storing art."""
 
 
 def setup(bot):
@@ -63,22 +61,13 @@ def configure(config):
 
     """Set up our config values. """
     config.define_section('art', ArtSection, validate=False)
-    config.art.configure_setting('db_host', 'What is the MySQL hostname for storing art?')
-    config.art.configure_setting('db_name', 'What is the MySQL database name for storing art?')
-    config.art.configure_setting('db_user', 'What is the MySQL username for storing art?')
-    config.art.configure_setting('db_pass', 'What is the MySQL password for storing art?')
+    config.art.configure_setting('db_engine', 'What is the SQLAlchemy engine for storing art?')
 
     """ Initializes the art database. """
-    db = MySQLdb.connect(host=config.art.db_host,
-                         user=config.art.db_user,
-                         passwd=config.art.db_pass,
-                         db=config.art.db_name)
-    cur = db.cursor()
+    engine = create_engine(config.art.db_engine)
     # Create art table
     Base.metadata.create_all(engine)
-    # Insert an art :D
-    db.commit()
-    db.close()
+
 
 @sopel.module.commands('art')
 def art(bot, trigger):
