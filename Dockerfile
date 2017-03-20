@@ -4,6 +4,7 @@ RUN apk add --update --no-cache \
     ca-certificates \
     py-mysqldb \
     enchant \
+    git \
     && pip install \
     flask \
     ipython \
@@ -12,9 +13,10 @@ RUN apk add --update --no-cache \
 
 RUN pip install git+https://github.com/sopel-irc/sopel.git
 
-
-VOLUME ["/sopel"]
-
+RUN adduser -D -u 1000 sopel
 
 
-ENTRYPOINT ["/init"]
+VOLUME ["/home/sopel/.sopel"]
+
+USER sopel
+CMD ["sopel"]

@@ -3,7 +3,7 @@ artbot:
   expose:
   - "5309"
   volumes:
-  - /sopel/modules
+  - /home/sopel/.sopel/modules
 
 mysql:
   image: mysql:5.6.26

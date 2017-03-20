@@ -1,6 +1,6 @@
 # coding=utf8
 
-import MySQLdb
+import MySQLdb # TODO: Make this Sql alchemy!
 import sopel.module
 from sopel.config.types import StaticSection, ValidatedAttribute
 from flask import Flask, abort
