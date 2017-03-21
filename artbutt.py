@@ -46,7 +46,7 @@ class Art(Base):
 class ArtSection(StaticSection):
     """ Setup what our config keys look like. """
     db_engine = ValidatedAttribute('db_engine', default="sqlite:///sopel_art.db")
-    """The MySQL host for storing art."""
+    """The full sqlalchemy uri for the database, e.g. sqlite:///sopel_art.db or postgresql://user:pass@localhost:5432/artdb"""
 
     port = ValidatedAttribute('port', default="5309")
     """The art API port."""
