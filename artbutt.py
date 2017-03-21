@@ -95,30 +95,29 @@ def art(bot, trigger):
     global DBSession
     global ART_TRIGGER
     cut_trigger = trigger[len(ART_TRIGGER):].strip()
-    art = False
     if not cut_trigger:
         query = DBSession.query(Art)
-        rowCount = int(query.count())
-        art = query.offset(int(rowCount * random.random())).first()
+        row_count = int(query.count())
+        the_art = query.offset(int(row_count * random.random())).first()
     else:
         # Attempt to get art
-        art = DBSession.query(Art).filter_by(art=cut_trigger).first()
-    if art:
-        print_art(bot, art)
+        the_art = DBSession.query(Art).filter_by(art=cut_trigger).first()
+    if the_art:
+        print_art(bot, the_art)
         DBSession.add(art)
         DBSession.commit()
     else:
         bot.say("No such art found! Create art at {}".format(bot.config.art.url))
 
 
-def print_art(bot, art):
+def print_art(bot, current_art):
     """
     Prints an art to irc using the supplied bot.
     :param bot: sopel bot.
     :param art: the art to print.
     :return: None.
     """
-    art.display_count += 1
-    for line in art.irccode.split('\n'):
+    current_art.display_count += 1
+    for line in current_art.irccode.split('\n'):
         bot.say(line)
-    bot.say("{} by {} (printed {} times now)".format(art.art, art.creator, art.display_count))
+    bot.say("{} by {} (printed {} times now)".format(current_art.art, current_art.creator, current_art.display_count))
