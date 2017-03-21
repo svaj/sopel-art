@@ -1,5 +1,15 @@
 # coding=utf8
+"""
+Sopel-Art!
 
+https://github.com/svaj/artbutt
+
+A beautiful sopel plugin that allows users to create and display deliciously aesthetic IRC art!
+
+This was originally a PHP bot thing, named deerkins, https://github.com/worldeggplant/deerkins.  However,
+no one in their right mind runs a PHP irc bot.
+
+"""
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
