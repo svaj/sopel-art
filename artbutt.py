@@ -20,18 +20,16 @@ from flask_restless import APIManager
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import Column, DateTime, Integer, String, Text
 
 
 ART_TRIGGER = 'art'
 app = Flask(__name__)
 local_bot = None
+db = {}
 
 Base = declarative_base()  # SA Base
-engine = {}
-DBSession = {}
-db = {}
+
 
 class Art(Base):
     __tablename__ = 'art'
@@ -61,18 +59,12 @@ def setup(bot):
     """Starts up Flask to allow POSTs to add new arts. """
     global local_bot
     global app
-    global engine
-    global DBSession
     global db
     bot.config.define_section('art', ArtSection)
     local_bot = bot
     port = bot.config.art.port
     app.config['SQLALCHEMY_DATABASE_URI'] = bot.config.art.db_engine
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    engine = create_engine(bot.config.art.db_engine)
-    Session = sessionmaker(bind=engine)
-    DBSession = Session()
 
     db = SQLAlchemy(app)
     manager = APIManager(app, flask_sqlalchemy_db=db)
@@ -116,20 +108,20 @@ def art(bot, trigger):
     :param trigger: The trigger executing the command ".art <artname>"
     :return: None.
     """
-    global DBSession
+    global db
     global ART_TRIGGER
     cut_trigger = trigger[len(ART_TRIGGER)+1:].strip()
     the_art = False
     if not cut_trigger:
-        query = DBSession.query(Art)
+        query = db.session.query(Art)
         row_count = int(query.count())
         the_art = query.offset(int(row_count * random.random())).first()
     else:
         # Attempt to get art
-        the_art = DBSession.query(Art).filter_by(art=cut_trigger).first()
+        the_art = db.session.query(Art).filter_by(art=cut_trigger).first()
     if the_art:
         print_art(bot, the_art)
-        DBSession.commit()
+        db.session.commit()
     else:
         bot.say("No such art found! Create art at {}".format(bot.config.art.url))
 
@@ -146,17 +138,3 @@ def print_art(bot, current_art):
         bot.say(line)
         bot.stack = {}  # Get rid of our stack (avoid "..." messages)
     bot.say("{} by {} (printed {} times now)".format(current_art.art, current_art.creator, current_art.display_count))
-
-
-@app.route("/artz", methods=['GET'])
-def get_art():
-    """ List the arts. """
-    return jsonify({'art': Art.query.all()})
-
-
-@app.route("/artz", methods=['POST'])
-def add_art():
-    """ Add an art. """
-    if not request.json or not 'name' in request.json:
-        abort(400)
-    print("HA HA HA")
