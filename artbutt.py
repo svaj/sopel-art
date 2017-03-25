@@ -11,6 +11,7 @@ no one in their right mind runs a PHP irc bot.
 
 """
 
+import datetime
 import random
 import threading  # This is so we can start flask in a thread. :D
 import sopel.module
@@ -18,6 +19,7 @@ from sopel.config.types import StaticSection, ValidatedAttribute
 from flask import Flask, abort, jsonify
 from flask_restless import APIManager
 from flask_sqlalchemy import SQLAlchemy
+from marshmallow import Schema, fields, pprint, post_load
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy import Column, DateTime, Integer, String, Text
@@ -39,9 +41,21 @@ class Art(Base):
     creator = Column(String(250), nullable=False)
     art = Column(Text, nullable=False, unique=True)
     kinskode = Column(Text, nullable=False)
-    irccode = Column(Text, nullable=False)
-    display_count = Column(Integer, nullable=False)
+    irccode = Column(Text, nullable=False, default='')
+    display_count = Column(Integer, nullable=False, default=0)
 
+
+class ArtSchema(Schema):
+    id = fields.Int(dump_only=True)
+    creator = fields.Str()
+    date = fields.Date()
+    art = fields.Str()
+    kinskode = fields.Str()
+    irccode = fields.Str(load_only=True)
+
+    @post_load
+    def make_art(self, data):
+        return Art(**data)
 
 class ArtSection(StaticSection):
     """ Setup what our config keys look like. """
@@ -55,6 +69,22 @@ class ArtSection(StaticSection):
     """The art creation site's full URL."""
 
 
+art_schema = ArtSchema()
+
+def art_serializer(instance):
+    return art_schema.dump(instance).data
+
+def art_deserializer(data):
+    return art_schema.load(data).data
+
+def art_after_get_many(result=None, search_params=None, **kw):
+    result['objects'] = [art_serializer(obj) for obj in result['objects']]
+
+
+def art_before_insert(data=None, **kw):
+    data['irccode'] = convert_kinskode_to_irccode(data['kinskode'])
+    data['date'] = datetime.datetime.utcnow().isoformat()
+
 def setup(bot):
     """Starts up Flask to allow POSTs to add new arts. """
     global local_bot
@@ -67,8 +97,23 @@ def setup(bot):
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     db = SQLAlchemy(app)
+    Base.metadata.create_all(bind=db.engine)
+    db.init_app(app)
+    db.create_all()
     manager = APIManager(app, flask_sqlalchemy_db=db)
-    manager.create_api(Art, methods=['GET', 'POST'])
+    manager.create_api(Art,
+                       methods=['GET', 'POST'],
+                       max_results_per_page=50,
+                       results_per_page=50,
+                       serializer=art_serializer,
+                       deserializer=art_deserializer,
+                       preprocessors={
+                           'POST':[art_before_insert]
+                       },
+                       postprocessors={
+                           'GET_MANY': [art_after_get_many]
+                       }
+                       )
 
     threading.Thread(target=app.run,
         args=(),
@@ -111,6 +156,7 @@ def art(bot, trigger):
     global db
     global ART_TRIGGER
     cut_trigger = trigger[len(ART_TRIGGER)+1:].strip()
+    print("wat")
     the_art = False
     if not cut_trigger:
         query = db.session.query(Art)
@@ -138,3 +184,41 @@ def print_art(bot, current_art):
         bot.say(line)
         bot.stack = {}  # Get rid of our stack (avoid "..." messages)
     bot.say("{} by {} (printed {} times now)".format(current_art.art, current_art.creator, current_art.display_count))
+
+
+def convert_kinskode_to_irccode(art_text):
+    c = chr(3)
+    fill = '@'
+    color_map = {
+        ' ': 1,
+        'A': 0,
+        'B': 2,
+        'C': 3,
+        'D': 4,
+        'E': 5,
+        'F': 6,
+        'G': 7,
+        'H': 8,
+        'I': 9,
+        'J': 10,
+        'K': 11,
+        'L': 12,
+        'M': 13,
+        'N': 14,
+        'O': 15,
+        '_': 00
+    }
+    prev_char = ''
+    parsed = ''
+    for line in art_text.split('\n'):
+        for char in line:
+            char = char.upper()
+            color = color_map[char]
+            if prev_char == char:
+                parsed += fill
+            else:
+                parsed += "{}{},{}{}".format(c, str(color).zfill(2), str(color).zfill(2), fill)
+        parsed += "\n"
+    return parsed
+
+
