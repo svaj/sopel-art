@@ -54,7 +54,6 @@ class ArtSchema(Schema):
     kinskode = fields.Str()
     irccode = fields.Str(load_only=True)
 
-
     @post_load
     def make_art(self, data):
         return Art(**data)
@@ -73,13 +72,15 @@ class ArtSection(StaticSection):
 
 art_schema = ArtSchema()
 
+
 def art_serializer(instance):
     return art_schema.dump(instance).data
+
 
 def art_deserializer(data):
     d = art_schema.load(data)
     if db.session.query(Art).filter(Art.art == d.data.art).first() is not None:
-        raise ValidationError('ART IS NOT UNIQUE.', field_names=['art'])
+        error = ValidationError(message='ART IS NOT UNIQUE.', field_names=['art'], fields=d.data.art)
     return d.data
 
 def art_after_get_many(result=None, search_params=None, **kw):
