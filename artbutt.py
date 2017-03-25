@@ -20,6 +20,7 @@ from flask import Flask, abort, jsonify
 from flask_restless import APIManager
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow import Schema, fields, pprint, post_load
+from marshmallow.exceptions import ValidationError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy import Column, DateTime, Integer, String, Text
@@ -53,6 +54,7 @@ class ArtSchema(Schema):
     kinskode = fields.Str()
     irccode = fields.Str(load_only=True)
 
+
     @post_load
     def make_art(self, data):
         return Art(**data)
@@ -75,7 +77,10 @@ def art_serializer(instance):
     return art_schema.dump(instance).data
 
 def art_deserializer(data):
-    return art_schema.load(data).data
+    d = art_schema.load(data)
+    if db.session.query(Art).filter(Art.art == d.data.art).first() is not None:
+        raise ValidationError('ART IS NOT UNIQUE.', field_names=['art'])
+    return d.data
 
 def art_after_get_many(result=None, search_params=None, **kw):
     result['objects'] = [art_serializer(obj) for obj in result['objects']]
@@ -84,6 +89,7 @@ def art_after_get_many(result=None, search_params=None, **kw):
 def art_before_insert(data=None, **kw):
     data['irccode'] = convert_kinskode_to_irccode(data['kinskode'])
     data['date'] = datetime.datetime.utcnow().isoformat()
+
 
 def setup(bot):
     """Starts up Flask to allow POSTs to add new arts. """
@@ -107,6 +113,7 @@ def setup(bot):
                        results_per_page=50,
                        serializer=art_serializer,
                        deserializer=art_deserializer,
+                       validation_exceptions=[ValidationError],
                        preprocessors={
                            'POST':[art_before_insert]
                        },
