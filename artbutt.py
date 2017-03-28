@@ -2,7 +2,7 @@
 """
 Sopel-Art!
 
-https://github.com/svaj/artbutt
+https://github.com/svaj/sopel-art
 
 A beautiful sopel plugin that allows users to create and display deliciously aesthetic IRC art!
 
