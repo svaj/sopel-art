@@ -17,6 +17,7 @@ import threading  # This is so we can start flask in a thread. :D
 import sopel.module
 from sopel.config.types import StaticSection, ValidatedAttribute
 from flask import Flask
+from flask_cors import CORS
 from flask_restless import APIManager
 from flask_sqlalchemy import SQLAlchemy
 from marshmallow import Schema, fields, post_load
@@ -28,6 +29,7 @@ from sqlalchemy import Column, DateTime, Integer, String, Text
 
 ART_TRIGGER = 'art'
 app = Flask(__name__)
+CORS(app)
 local_bot = None
 db = {}
 
@@ -41,7 +43,7 @@ class Art(Base):
     id = Column(Integer, primary_key=True)
     date = Column(DateTime, nullable=False)
     creator = Column(String(250), nullable=False)
-    art = Column(Text, nullable=False, unique=True)
+    art = Column(String(250), nullable=False, unique=True)
     kinskode = Column(Text, nullable=False)
     irccode = Column(Text, nullable=False, default='')
     display_count = Column(Integer, nullable=False, default=0)
