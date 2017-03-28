@@ -35,6 +35,7 @@ Base = declarative_base()  # SA Base
 
 
 class Art(Base):
+    """ Our Art model.  Beautiful. """
     __tablename__ = 'art'
 
     id = Column(Integer, primary_key=True)
@@ -47,6 +48,7 @@ class Art(Base):
 
 
 class ArtSchema(Schema):
+    """ A Marshmallow schema for Art. """
     id = fields.Int(dump_only=True)
     creator = fields.Str()
     date = fields.Date()
@@ -56,6 +58,7 @@ class ArtSchema(Schema):
 
     @post_load
     def make_art(self, data):
+        """MAKE ART"""
         return Art(**data)
 
 class ArtSection(StaticSection):
@@ -74,20 +77,25 @@ art_schema = ArtSchema()
 
 
 def art_serializer(instance):
+    """ Use Marshmallow for serializing a single instance. """
     return art_schema.dump(instance).data
 
 
 def art_deserializer(data):
+    """ This lets us use Marshmallow to load new arts. """
+    global db
     d = art_schema.load(data)
     if db.session.query(Art).filter(Art.art == d.data.art).first() is not None:
         error = ValidationError(message='ART IS NOT UNIQUE.', field_names=['art'], fields=d.data.art)
     return d.data
 
 def art_after_get_many(result=None, search_params=None, **kw):
+    """ This lets us use Marshmallow to serialize our collection. """
     result['objects'] = [art_serializer(obj) for obj in result['objects']]
 
 
 def art_before_insert(data=None, **kw):
+    """ This prepares new art before adding it to the db. """
     data['irccode'] = convert_kinskode_to_irccode(data['kinskode'])
     data['date'] = datetime.datetime.utcnow().isoformat()
 
@@ -108,29 +116,26 @@ def setup(bot):
     db.init_app(app)
     db.create_all()
     manager = APIManager(app, flask_sqlalchemy_db=db)
-    manager.create_api(Art,
-                       methods=['GET', 'POST'],
-                       max_results_per_page=50,
-                       results_per_page=50,
-                       serializer=art_serializer,
-                       deserializer=art_deserializer,
-                       validation_exceptions=[ValidationError],
-                       preprocessors={
-                           'POST':[art_before_insert]
-                       },
-                       postprocessors={
-                           'GET_MANY': [art_after_get_many]
-                       }
-                       )
-
-    threading.Thread(target=app.run,
+    manager.create_api(
+        Art,
+        methods=['GET', 'POST'],
+        max_results_per_page=50,
+        results_per_page=50,
+        serializer=art_serializer,
+        deserializer=art_deserializer,
+        validation_exceptions=[ValidationError],
+        preprocessors={
+            'POST': [art_before_insert]
+        },
+        postprocessors={
+            'GET_MANY': [art_after_get_many]
+        })
+    threading.Thread(
+        target=app.run,
         args=(),
         kwargs={'host': '0.0.0.0', 'port': port},
     ).start()
-    print("Listening for arts on {}".format(port))
-
-    # Create API endpoints, which will be available at /api/<tablename> by
-    # default. Allowed HTTP methods can be specified as well.
+    print("Listening for art on {}".format(port))
 
 
 def configure(config):
@@ -195,6 +200,11 @@ def print_art(bot, current_art):
 
 
 def convert_kinskode_to_irccode(art_text):
+    """
+    Converts "kinskode" art into IRC Codes (color codes, etc).
+    :param art_text: The kinskode art.
+    :return: The converted IRC code art.
+    """
     c = chr(3)
     fill = '@'
     color_map = {
