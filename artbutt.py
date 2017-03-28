@@ -16,10 +16,10 @@ import random
 import threading  # This is so we can start flask in a thread. :D
 import sopel.module
 from sopel.config.types import StaticSection, ValidatedAttribute
-from flask import Flask, abort, jsonify
+from flask import Flask
 from flask_restless import APIManager
 from flask_sqlalchemy import SQLAlchemy
-from marshmallow import Schema, fields, pprint, post_load
+from marshmallow import Schema, fields, post_load
 from marshmallow.exceptions import ValidationError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
@@ -61,6 +61,7 @@ class ArtSchema(Schema):
         """MAKE ART"""
         return Art(**data)
 
+
 class ArtSection(StaticSection):
     """ Setup what our config keys look like. """
     db_engine = ValidatedAttribute('db_engine', default="sqlite:///sopel_art.db")
@@ -86,8 +87,9 @@ def art_deserializer(data):
     global db
     d = art_schema.load(data)
     if db.session.query(Art).filter(Art.art == d.data.art).first() is not None:
-        error = ValidationError(message='ART IS NOT UNIQUE.', field_names=['art'], fields=d.data.art)
+        raise ValidationError(message='ART IS NOT UNIQUE.', field_names=['art'], fields=d.data.art)
     return d.data
+
 
 def art_after_get_many(result=None, search_params=None, **kw):
     """ This lets us use Marshmallow to serialize our collection. """
@@ -238,5 +240,3 @@ def convert_kinskode_to_irccode(art_text):
                 parsed += "{}{},{}{}".format(c, str(color).zfill(2), str(color).zfill(2), fill)
         parsed += "\n"
     return parsed
-
-
