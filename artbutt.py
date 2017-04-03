@@ -391,5 +391,32 @@ def modify_flip(kinskode=''):
     return kinskode
 
 
-def modify_x(kinskode=''):
+def modify_x(kinskode='', iteration=0):
+    """Applies a random amount of modifiers """
+    if iteration < 4:
+        iteration += 1
+    else:
+        return kinskode
+
+    mod_map = {
+        'i': 'invert',
+        'm': 'mirror',
+        'n': 'unitinu',
+        'd': 'divide',
+        'r': 'reverse',
+        'u': 'upsidedown',
+        's': 'square',
+        'f': 'flip'
+    }
+    for i in random.randrange(4, 10):
+        func = 'modify_' + random.choice(mod_map.items())
+        try:
+            kinskode = globals()[func](kinskode)
+        except Exception as e:
+            print(e)
+            print("uh oh")
+            pass
+    if random.randint(0, 1) == 1:
+        return modify_x(kinskode, iteration)
+
     return kinskode
