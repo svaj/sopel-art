@@ -181,23 +181,26 @@ def art(bot, trigger):
     global db
     global ART_TRIGGER
     cut_trigger = trigger[len(ART_TRIGGER)+1:].strip()
-    print("wat")
     the_art = False
+    modifiers = ''
     if not cut_trigger:
         query = db.session.query(Art)
         row_count = int(query.count())
         the_art = query.offset(int(row_count * random.random())).first()
     else:
-        # Attempt to get art
+        # Attempt to get art & see about modifiers
+        if ' ' in cut_trigger:
+            modifiers = cut_trigger[cut_trigger.index(' '):].strip()
+            cut_trigger = cut_trigger[:cut_trigger.index(' ')].strip()
         the_art = db.session.query(Art).filter_by(art=cut_trigger).first()
     if the_art:
-        print_art(bot, the_art)
+        print_art(bot, the_art, modifiers)
         db.session.commit()
     else:
         bot.say("No such art found! Create art at {}".format(bot.config.art.url))
 
 
-def print_art(bot, current_art):
+def print_art(bot, current_art, modifiers=''):
     """
     Prints an art to irc using the supplied bot.
     :param bot: sopel bot.
@@ -205,9 +208,18 @@ def print_art(bot, current_art):
     :return: None.
     """
     current_art.display_count += 1
-    for line in current_art.irccode.split('\n'):
-        bot.say(line)
+    kinskode = current_art.kinskode
+    irccode = current_art.irccode
+    if modifiers:
+        print(kinskode)
+        kinskode = apply_modifiers(kinskode, list(modifiers))
+        print("--------------!!!-------------")
+        print(kinskode)
+        irccode = convert_kinskode_to_irccode(kinskode, 30, 30)
+    for line in irccode.split('\n'):
         bot.stack = {}  # Get rid of our stack (avoid "..." messages)
+        bot.say(line)
+    bot.stack = {}
     bot.say("{} by {} (printed {} times now)".format(current_art.art, current_art.creator, current_art.display_count))
 
 
@@ -249,7 +261,7 @@ def convert_kinskode_to_irccode(art_text, max_lines=20, max_cols=30):
                 parsed_line += fill
             else:
                 parsed_line += "{}{},{}{}".format(c, str(color).zfill(2), str(color).zfill(2), fill)
-        parsed += "{}\n".format(parsed_line[:max_cols])
+        parsed += "{}\n".format(parsed_line)
 
     return parsed
 
@@ -275,8 +287,9 @@ def apply_modifiers(kinskode='', modifiers=None):
         else:
             func = 'modify_' + mod_map[mod]
             try:
-                kinskode = locals()[func](kinskode)
+                kinskode = globals()[func](kinskode)
             except Exception:
+                print("uh oh")
                 pass
     return kinskode
 
