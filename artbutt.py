@@ -288,7 +288,8 @@ def apply_modifiers(kinskode='', modifiers=None):
             func = 'modify_' + mod_map[mod]
             try:
                 kinskode = globals()[func](kinskode)
-            except Exception:
+            except Exception as e:
+                print(e)
                 print("uh oh")
                 pass
     return kinskode
@@ -343,22 +344,23 @@ def modify_reverse(kinskode=''):
 
 
 def modify_upsidedown(kinskode=''):
-    return kinskode.split('\n')[::-1].join('\n')
+    return '\n'.join(kinskode.split('\n')[::-1])
 
 
 def modify_mirror(kinskode='', direction=0):
-
-    half = math.floor(max(kinskode.split('\n'), key=len))
+    longest = max(kinskode.split('\n'), key=len)
+    half = math.floor(len(longest) / 2)
+    print("half is {}".format(half))
     if half < 1:
         return kinskode
     new_code = ''
     for line in kinskode.split('\n'):
         if direction == 0:
-            new_code += modify_reverse(line)[:half].trim() + line[half:] + '\n'
+            new_code += modify_reverse(line)[:half].strip() + line[half:] + '\n'
         elif direction == 1:
-            new_code += line[:half] + modify_reverse(line)[half:].trim() + '\n'
+            new_code += line[:half] + modify_reverse(line)[half:].strip() + '\n'
         else:
-            new_code += modify_reverse(line)[half:].trim() + line[:half] + '\n'
+            new_code += modify_reverse(line)[half:].strip() + line[:half] + '\n'
     return new_code
 
 
