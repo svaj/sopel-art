@@ -267,6 +267,7 @@ def convert_kinskode_to_irccode(art_text, max_lines=20, max_cols=30):
 
 
 def apply_modifiers(kinskode='', modifiers=None):
+    """ Applies a list of modifiers to an art. """
     mod_map = {
         'i': 'invert',
         'm': 'mirror',
@@ -296,6 +297,7 @@ def apply_modifiers(kinskode='', modifiers=None):
 
 
 def strtr(strng, replace):
+    """ python implementation of strtr. """
     buffer = []
     i, n = 0, len(strng)
     while i < n:
@@ -313,6 +315,7 @@ def strtr(strng, replace):
 
 
 def modify_invert(kinskode=''):
+    """ inverts colors of the art. """
     invert_map = {
         ' ': 'A',
         'A': ' ',
@@ -344,10 +347,16 @@ def modify_reverse(kinskode=''):
 
 
 def modify_upsidedown(kinskode=''):
+    """ just upside-downs the art. """
     return '\n'.join(kinskode.split('\n')[::-1])
 
 
 def modify_mirror(kinskode='', direction=0):
+    """
+    :param kinskode: art kinskode to modify
+    :param direction: direction to mirror (mirror, unitinu, divide)
+    :return: modified kinskode.
+    """
     longest = max(kinskode.split('\n'), key=len)
     half = math.floor(len(longest) / 2)
     print("half is {}".format(half))
@@ -365,10 +374,12 @@ def modify_mirror(kinskode='', direction=0):
 
 
 def modify_unitinu(kinskode=''):
+    """ UNITINU's the art. """
     return modify_mirror(kinskode, direction=1)
 
 
 def modify_divide(kinskode=''):
+    """ Divide the art."""
     return modify_mirror(kinskode, direction=2)
 
 
