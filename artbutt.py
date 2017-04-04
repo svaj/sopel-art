@@ -276,7 +276,6 @@ def apply_modifiers(kinskode='', modifiers=None):
         'r': 'reverse',
         'u': 'upsidedown',
         's': 'square',
-        'f': 'flip',
         'x': 'x'
     }
     unique_mods = set(modifiers)
@@ -384,11 +383,26 @@ def modify_divide(kinskode=''):
 
 
 def modify_square(kinskode=''):
-    return kinskode
+    """
+    Squares an art.
+    :param kinskode: art kinskode to square
+    :return: squared kinskode
+    """
+    longest = max(kinskode.split('\n'), key=len)
+    half = math.floor(len(longest) / 2)
+    if half < 1:
+        return kinskode
+    c = 0
+    lines = kinskode.split('\n')
+    new_code = ''
+    for line in lines:
+        if c < math.floor(len(lines) / 2):
+            new_code += line[:half] + line[half:] + '\n'
+        else:
+            new_code = line[:half] + line[half:] + '\n' + new_code
 
+    return new_code
 
-def modify_flip(kinskode=''):
-    return kinskode
 
 
 def modify_x(kinskode='', iteration=0):
@@ -405,11 +419,11 @@ def modify_x(kinskode='', iteration=0):
         'd': 'divide',
         'r': 'reverse',
         'u': 'upsidedown',
-        's': 'square',
-        'f': 'flip'
+        's': 'square'
     }
-    for i in random.randrange(4, 10):
-        func = 'modify_' + random.choice(mod_map.items())
+    for i in range(4, random.randrange(4, 10)):
+        k, func_str = random.choice(list(mod_map.items()))
+        func = 'modify_' + func_str
         try:
             kinskode = globals()[func](kinskode)
         except Exception as e:
