@@ -16,16 +16,22 @@ import math
 import random
 import threading  # This is so we can start flask in a thread. :D
 import sopel.module
+import numpy as np
+from io import BytesIO
 from sopel.config.types import StaticSection, ValidatedAttribute
 from flask import Flask
 from flask_cors import CORS
 from flask_restless import APIManager
 from flask_sqlalchemy import SQLAlchemy
+from PIL import Image
+from requests import get as http_get
 from marshmallow import Schema, fields, post_load
 from marshmallow.exceptions import ValidationError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy import Column, DateTime, Integer, String, Text
+from colormath.color_objects import LabColor, sRGBColor
+from colormath.color_conversions import convert_color
 
 
 ART_TRIGGER = 'art'
@@ -35,6 +41,64 @@ local_bot = None
 db = {}
 
 Base = declarative_base()  # SA Base
+
+irc_colors = {
+    (211, 215, 207): 0,
+    (46, 52, 54): 1,
+    (52, 101, 164): 2,
+    (78, 154, 6): 3,
+    (204, 0, 0): 4,
+    (143, 57, 2): 5,
+    (92, 53, 102): 6,
+    (206, 92, 0): 7,
+    (196, 160, 0): 8,
+    (115, 210, 22): 9,
+    (17, 168, 121): 10,
+    (88, 161, 157): 11,
+    (87, 121, 158): 12,
+    (160, 67, 101): 13,
+    (85, 87, 83): 14,
+    (136, 137, 133): 15
+}
+
+color_map = {
+    ' ': 1,
+    'A': 0,
+    'B': 2,
+    'C': 3,
+    'D': 4,
+    'E': 5,
+    'F': 6,
+    'G': 7,
+    'H': 8,
+    'I': 9,
+    'J': 10,
+    'K': 11,
+    'L': 12,
+    'M': 13,
+    'N': 14,
+    'O': 15,
+    '_': 00
+}
+
+reverse_color_map = {
+    1: ' ',
+    0: 'A',
+    2: 'B',
+    3: 'C',
+    4: 'D',
+    5: 'E',
+    6: 'F',
+    7: 'G',
+    8: 'H',
+    9: 'I',
+    10: 'J',
+    11: 'K',
+    12: 'L',
+    13: 'M',
+    14: 'N',
+    15: 'O',
+}
 
 
 class Art(Base):
@@ -229,27 +293,9 @@ def convert_kinskode_to_irccode(art_text, max_lines=20, max_cols=30):
     :param art_text: The kinskode art.
     :return: The converted IRC code art.
     """
+    global color_map
     c = chr(3)
     fill = '@'
-    color_map = {
-        ' ': 1,
-        'A': 0,
-        'B': 2,
-        'C': 3,
-        'D': 4,
-        'E': 5,
-        'F': 6,
-        'G': 7,
-        'H': 8,
-        'I': 9,
-        'J': 10,
-        'K': 11,
-        'L': 12,
-        'M': 13,
-        'N': 14,
-        'O': 15,
-        '_': 00
-    }
     prev_char = ''
     parsed = ''
     for line in art_text.split('\n')[:max_lines]:
@@ -404,7 +450,6 @@ def modify_square(kinskode=''):
     return new_code
 
 
-
 def modify_x(kinskode='', iteration=0):
     """Applies a random amount of modifiers """
     if iteration < 4:
@@ -434,3 +479,50 @@ def modify_x(kinskode='', iteration=0):
         return modify_x(kinskode, iteration)
 
     return kinskode
+
+
+def convert_image_to_kinskode(url=''):
+    """ Downloads an image and converst to kinskode. """
+    global irc_colors
+    global reverse_color_map
+    """ Given an image's url, convert it to kinskode as best as we can. """
+    # Download image
+    i = Image.open(BytesIO(http_get(url).content)).convert('RGBA')
+    # resize to small
+    w = 30
+    h = 20
+    size = w, h
+    i.thumbnail(size)
+    width, height = i.size
+    # read it and set up our kinskode
+    kinskode = ""
+    colors = list(irc_colors.keys())
+    arr = np.array(np.asarray(i).astype('float'))
+    for line in arr:
+        for pixel in line:
+            closest_colors = sorted(colors, key=lambda color: img_distance(color, pixel))
+            closest_color = closest_colors[0]
+            kinskode += reverse_color_map[irc_colors[closest_color]]
+        kinskode += "\n"
+    return kinskode
+
+
+@app.route('/convert')
+def convert_image_endpoint():
+    """ Endpoint to convert images to kinskode. """
+    from flask import request
+    if not request.args.get('url', False):
+        return "Invalid URL parameter."
+    return convert_image_to_kinskode(request.args.get('url', ''))
+
+
+def img_distance(c1, c2):
+    """ https://codebottle.io/code/1a4f8338/ """
+    rgb1 = sRGBColor(c1[0], c1[1], c1[2])
+    rgb2 = sRGBColor(c2[0], c2[1], c2[2])
+    lab1 = convert_color(rgb1, LabColor)
+    lab2 = convert_color(rgb2, LabColor)
+    (r1, g1, b1) = lab1.lab_l, lab1.lab_a, lab1.lab_b
+    (r2, g2, b2) = lab2.lab_l, lab2.lab_a, lab2.lab_b
+
+    return math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2)

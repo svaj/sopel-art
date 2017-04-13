@@ -1,6 +1,7 @@
 appdirs==1.4.3
 appnope==0.1.0
 click==6.7
+colormath==2.1.1
 decorator==4.0.11
 flake8==3.3.0
 Flask==0.12
@@ -15,9 +16,13 @@ MarkupSafe==1.0
 marshmallow==2.13.4
 mccabe==0.6.1
 mimerender==0.6.0
+networkx==1.11
+numpy==1.12.1
+olefile==0.44
 packaging==16.8
 pexpect==4.2.1
 pickleshare==0.7.4
+Pillow==4.1.0
 praw==4.4.0
 prawcore==0.8.0
 prompt-toolkit==1.0.13
