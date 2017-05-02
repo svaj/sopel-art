@@ -451,6 +451,7 @@ def modify_square(kinskode=''):
 
     return new_code
 
+
 def modify_shift(kinskode=''):
     """
     Shifts an art.
@@ -461,7 +462,6 @@ def modify_shift(kinskode=''):
     half = math.floor(len(longest) / 2)
     if half < 1:
         return kinskode
-    c = 0
     lines = kinskode.split('\n')
     shift_amount = random.randint(1, len(lines[0]))
     beginning_pixels = lines[-1][:shift_amount]
