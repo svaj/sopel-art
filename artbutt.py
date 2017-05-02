@@ -247,6 +247,7 @@ def art(bot, trigger):
     cut_trigger = trigger[len(ART_TRIGGER)+1:].strip()
     the_art = False
     modifiers = ''
+
     if not cut_trigger:
         query = db.session.query(Art)
         row_count = int(query.count())
@@ -322,6 +323,7 @@ def apply_modifiers(kinskode='', modifiers=None):
         'r': 'reverse',
         'u': 'upsidedown',
         's': 'square',
+        'f': 'shift',
         'x': 'x'
     }
     unique_mods = set(modifiers)
@@ -449,6 +451,29 @@ def modify_square(kinskode=''):
 
     return new_code
 
+def modify_shift(kinskode=''):
+    """
+    Shifts an art.
+    :param kinskode: art kinskode to square
+    :return: squared kinskode
+    """
+    longest = max(kinskode.split('\n'), key=len)
+    half = math.floor(len(longest) / 2)
+    if half < 1:
+        return kinskode
+    c = 0
+    lines = kinskode.split('\n')
+    shift_amount = random.randint(1, len(lines[0]))
+    beginning_pixels = lines[-1][:shift_amount]
+    new_code = ''
+    for line in lines:
+        new_code += beginning_pixels + line[len(beginning_pixels):] + '\n'
+        shift_amount += 1
+        beginning_pixels = line[:shift_amount]
+        if shift_amount >= len(line) - 1:
+            shift_amount = 1
+    return new_code
+
 
 def modify_x(kinskode='', iteration=0):
     """Applies a random amount of modifiers """
@@ -464,6 +489,7 @@ def modify_x(kinskode='', iteration=0):
         'd': 'divide',
         'r': 'reverse',
         'u': 'upsidedown',
+        'f': 'shift',
         's': 'square'
     }
     for i in range(4, random.randrange(4, 10)):
