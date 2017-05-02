@@ -4,6 +4,7 @@ The big differences between the original deerkins and this project are as follow
 
 * It's a sopel module (which means it's in Python now)
 * It accepts new art via a RESTful API
+* New art modifiers!
 
 ## Installation
 You should add this module to sopel.  You can do this by adding the path to this module to your sopel config under `[core] extra`.
@@ -13,6 +14,18 @@ that will allow you to generate new art.  See the example.html for more informat
 ## Commands
 `.art` will print out a random art
 `.art <artname>` will print out a specific art.
+`.art <artname> <modifiers>` will print out the modified art
+
+## Modifiers
+* d - divide
+* f - shift, shifts each line of the art a bit
+* i - invert, inverts the colors of the art
+* m - mirror, mirror image
+* n - unitinu the image
+* r - reverse the image
+* s - square
+* u - upsidedown
+* x - apply a bunch of random modifiers :)
 
 ## Demo
 Artbutt can (at least now) be found at http://art.devhax.com/ and is the place where anyone can create art.  The bot it 
