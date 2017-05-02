@@ -12,9 +12,10 @@ You can run the sopel with the config flag (-w) to configure the bot.  You will 
 that will allow you to generate new art.  See the example.html for more information.
 
 ## Commands
-`.art` will print out a random art
-`.art <artname>` will print out a specific art.
-`.art <artname> <modifiers>` will print out the modified art
+* `.art` will print out a random art
+* `.art <artname>` will print out a specific art.
+* `.art <artname>|<modifiers>` will print out the modified art
+* `.art |<modifiers>` will print out the a random modified art
 
 ## Modifiers
 * d - divide

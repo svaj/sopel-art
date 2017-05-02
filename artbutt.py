@@ -254,10 +254,15 @@ def art(bot, trigger):
         the_art = query.offset(int(row_count * random.random())).first()
     else:
         # Attempt to get art & see about modifiers
-        if ' ' in cut_trigger:
-            modifiers = cut_trigger[cut_trigger.index(' '):].strip()
-            cut_trigger = cut_trigger[:cut_trigger.index(' ')].strip()
-        the_art = db.session.query(Art).filter_by(art=cut_trigger).first()
+        if '|' in cut_trigger:
+            modifiers = cut_trigger[cut_trigger.index('|'):].strip()
+            cut_trigger = cut_trigger[:cut_trigger.index('|')].strip()
+            if cut_trigger == '':
+                query = db.session.query(Art)
+                row_count = int(query.count())
+                the_art = query.offset(int(row_count * random.random())).first()
+        if not the_art:
+            the_art = db.session.query(Art).filter_by(art=cut_trigger).first()
     if the_art:
         print_art(bot, the_art, modifiers)
         db.session.commit()
